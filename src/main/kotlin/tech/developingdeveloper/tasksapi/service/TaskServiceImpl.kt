@@ -15,7 +15,7 @@ class TaskServiceImpl @Autowired constructor(private val dataSource: TaskDataSou
 
         val tasks = dataSource.retrieveTasks()
 
-        if (tasks.isEmpty())
+        if (tasks.isNullOrEmpty())
             throw TaskException("List is empty")
 
         return tasks

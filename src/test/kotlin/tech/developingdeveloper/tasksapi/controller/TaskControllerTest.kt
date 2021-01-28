@@ -1,13 +1,19 @@
 package tech.developingdeveloper.tasksapi.controller
 
+import com.fasterxml.jackson.databind.ObjectMapper
 import com.ninjasquad.springmockk.MockkBean
 import io.mockk.every
-import org.junit.jupiter.api.Assertions
+import io.mockk.verify
+import org.junit.jupiter.api.DisplayName
+import org.junit.jupiter.api.Nested
 import org.junit.jupiter.api.Test
-import org.junit.runner.RunWith
+import org.junit.jupiter.api.TestInstance
 import org.springframework.beans.factory.annotation.Autowired
-import org.springframework.boot.test.autoconfigure.web.servlet.WebMvcTest
-import org.springframework.test.context.junit4.SpringRunner
+import org.springframework.boot.test.autoconfigure.web.servlet.AutoConfigureMockMvc
+import org.springframework.boot.test.context.SpringBootTest
+import org.springframework.http.MediaType
+import org.springframework.test.web.servlet.MockMvc
+import org.springframework.test.web.servlet.get
 import tech.developingdeveloper.tasksapi.datasource.TaskDataSource
 import tech.developingdeveloper.tasksapi.model.Task
 import tech.developingdeveloper.tasksapi.service.TaskService
@@ -189,35 +195,66 @@ Caused by: org.springframework.beans.factory.NoSuchBeanDefinitionException: No q
 	... 114 more
 
 */
-@RunWith(SpringRunner::class)
-@WebMvcTest(TaskController::class)
+@SpringBootTest
+@AutoConfigureMockMvc
 internal class TaskControllerTest @Autowired constructor(
-    private val taskController: TaskController
+    private val mockMvc: MockMvc,
+    private val objectMapper: ObjectMapper
 ) {
 
-    @MockkBean
-    private lateinit var tasksService: TaskService
+    private val baseUrl = "/api/tasks/"
 
     @MockkBean
     private lateinit var taskDataSource: TaskDataSource
 
-    @Test
-    fun `should return all tasks in the database`() {
+    @Nested
+    @DisplayName("GET api/tasks/")
+    @TestInstance(TestInstance.Lifecycle.PER_CLASS)
+    inner class GetTasks {
 
-        // given
-        val tasks = listOf(
-            Task(1, "some title", "some details", "HIGH"),
-            Task(2, "some title", "some details", "HIGH"),
-            Task(3, "some title", "some details", "HIGH")
-        )
+        @Test
+        fun `should return all tasks in the database`() {
 
-        every { taskDataSource.retrieveTasks() } returns tasks
+            // given
+            val tasks = listOf(
+                Task(1, "some title", "some details", "HIGH")
+            )
+            every { taskDataSource.retrieveTasks() } returns tasks
 
-        every { tasksService.retrieveTasks() } returns taskDataSource.retrieveTasks()
+            // when
+            val mvcResult = mockMvc.get(baseUrl)
 
-        val result = taskController.getTasks()
+            // then
+            mvcResult
+                .andDo { print() }
+                .andExpect {
+                    status {
+                        isOk()
+                    }
+                    content {
+                        contentType(MediaType.APPLICATION_JSON)
+                        json(objectMapper.writeValueAsString(tasks), true)
+                    }
+                }
+        }
 
-        Assertions.assertEquals(tasks, result)
+        @Test
+        fun `should return BAD REQUEST when tasks are empty`() {
 
+            // given
+            every { taskDataSource.retrieveTasks() } returns emptyList()
+
+            // when
+            val mvcResult = mockMvc.get(baseUrl)
+
+            // then
+            mvcResult
+                .andDo { print() }
+                .andExpect {
+                    status {
+                        isBadRequest()
+                    }
+                }
+        }
     }
 }
