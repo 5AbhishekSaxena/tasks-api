@@ -11,11 +11,19 @@ class MockTaskDataSource : TaskDataSource {
         Task("some title", "some details", "HIGH", 1)
     )
 
-    override fun retrieveTasks(): Collection<Task> = tasks
+    override fun retrieveTasks() = tasks
 
-    override fun retrieveTask(taskId: Int): Task? = tasks.firstOrNull {
+    override fun retrieveTask(taskId: Int) = tasks.firstOrNull {
         it.id == taskId
     }
 
-    override fun addTask(task: Task): Boolean = tasks.add(task)
+    override fun addTask(task: Task) = tasks.add(task)
+
+    override fun updateTask(task: Task): Boolean {
+        tasks.removeIf { it.id == task.id }
+
+        return tasks.add(task)
+    }
+
+    override fun deleteTask(taskId: Int) = tasks.removeIf { it.id == taskId }
 }

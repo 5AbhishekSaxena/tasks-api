@@ -2,6 +2,7 @@ package tech.developingdeveloper.tasksapi.service
 
 import io.mockk.every
 import io.mockk.mockk
+import io.mockk.verify
 import org.junit.jupiter.api.*
 import org.junit.jupiter.api.Assertions.assertEquals
 import tech.developingdeveloper.tasksapi.datasource.TaskDataSource
@@ -10,17 +11,14 @@ import tech.developingdeveloper.tasksapi.model.Task
 
 internal class TaskServiceTest {
 
-    private val taskDataSource = mockk<TaskDataSource>()
-
+    private val taskDataSource = mockk<TaskDataSource>(relaxed = true)
 
     private val taskService = TaskServiceImpl(taskDataSource)
-
 
     @Nested
     @DisplayName("Retrieve all tasks")
     @TestInstance(TestInstance.Lifecycle.PER_CLASS)
     inner class RetrieveTasks {
-
 
         @Test
         fun `should retrieve tasks if list is not empty`() {
@@ -33,7 +31,7 @@ internal class TaskServiceTest {
             every { taskDataSource.retrieveTasks() } returns tasks
 
             // when
-            val result = taskService.retrieveTasks()
+            val result = assertDoesNotThrow { taskService.retrieveTasks() }
 
             // then
             assertEquals(tasks, result)
@@ -64,11 +62,11 @@ internal class TaskServiceTest {
         fun `should return task using task Id`() {
             // given
             val taskId = 1
-            val task = Task("soem title", "some details", "HIGH", 1)
+            val task = Task("some title", "some details", "HIGH", 1)
             every { taskDataSource.retrieveTask(taskId) } returns task
 
             // when
-            val result = taskService.retrieveTask(taskId)
+            val result = assertDoesNotThrow { taskService.retrieveTask(taskId) }
 
             // then
             assertEquals(task, result)
@@ -102,7 +100,7 @@ internal class TaskServiceTest {
             every { taskDataSource.addTask(task) } returns true
 
             // when
-            val result = taskService.addTask(task)
+            val result = assertDoesNotThrow { taskService.addTask(task) }
 
             // then
             assertEquals(task, result)
@@ -122,6 +120,90 @@ internal class TaskServiceTest {
             assertEquals("Failed to add new task", exception.message)
 
         }
+    }
+
+    @Nested
+    @DisplayName("Update task")
+    @TestInstance(TestInstance.Lifecycle.PER_CLASS)
+    inner class UpdateTask {
+
+        @Test
+        fun `should update task`() {
+            // given
+            var count = 0
+            val oldTask = Task("some task", "some details", "HIGH", 1)
+            val updatedTask = Task("new task", "new details", "LOW", 1)
+
+            every { taskDataSource.retrieveTask(1) } answers {
+                count++
+                if (count == 1)
+                    oldTask
+                else
+                    updatedTask
+
+
+            }
+
+            every { taskDataSource.updateTask(updatedTask) } returns true
+
+            // when
+            val result = assertDoesNotThrow { taskService.updateTask(updatedTask) }
+
+            // then
+            assertEquals(updatedTask, result)
+            assertEquals(updatedTask, taskDataSource.retrieveTask(updatedTask.id))
+
+        }
+
+        @Test
+        fun `should throw exception when update task`() {
+            // given
+            val updatedTask = Task("new task", "new details", "LOW", 1)
+            every { taskDataSource.retrieveTask(1) } returns null
+
+            // when
+            val result = assertThrows<TaskException> { taskService.updateTask(updatedTask) }
+
+            // then
+            assertEquals("Task doesn't exit with id: ${updatedTask.id}", result.message)
+
+        }
+
+    }
+
+    @Nested
+    @DisplayName("Delete task")
+    @TestInstance(TestInstance.Lifecycle.PER_CLASS)
+    inner class DeleteTask {
+
+        @Test
+        fun `should delete the task with the given id`() {
+            // given
+            val task = Task("some title", "some details", "HIGH", 1)
+            every { taskDataSource.retrieveTask(task.id) } returns task
+            every { taskDataSource.deleteTask(task.id) } returns true
+
+            // when
+            val result = assertDoesNotThrow { taskService.deleteTask(task.id) }
+
+            // then
+            assertEquals(task, result)
+        }
+
+        @Test
+        fun `should throw exception as invalid id is given`() {
+            // given
+            val taskId = 1
+            every { taskDataSource.retrieveTask(taskId) } returns null
+
+            // when
+            val exception = assertThrows<TaskException> { taskService.deleteTask(taskId) }
+
+            // then
+            assertEquals("Task doesn't exit with id: $taskId", exception.message)
+
+        }
+
     }
 
 

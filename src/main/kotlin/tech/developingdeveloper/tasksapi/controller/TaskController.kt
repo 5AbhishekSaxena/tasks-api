@@ -28,4 +28,9 @@ class TaskController @Autowired constructor(
     @ResponseStatus(HttpStatus.CREATED)
     fun addTask(@RequestBody task: Task): Task = taskService.addTask(task)
 
+    @PatchMapping("/")
+    fun updateTask(@RequestBody task: Task): Task = taskService.updateTask(task)
+
+    @DeleteMapping("/{taskId}")
+    fun deleteTask(@PathVariable taskId: Int): Task = taskService.deleteTask(taskId)
 }

@@ -13,5 +13,7 @@ interface TaskDataSource {
     fun retrieveTasks(): Collection<Task>
     fun retrieveTask(taskId: Int): Task?
     fun addTask(task: Task): Boolean
+    fun updateTask(task: Task): Boolean
+    fun deleteTask(taskId: Int): Boolean
 
 }

@@ -11,9 +11,7 @@ import org.springframework.beans.factory.annotation.Autowired
 import org.springframework.boot.test.autoconfigure.web.servlet.AutoConfigureMockMvc
 import org.springframework.boot.test.context.SpringBootTest
 import org.springframework.http.MediaType
-import org.springframework.test.web.servlet.MockMvc
-import org.springframework.test.web.servlet.get
-import org.springframework.test.web.servlet.post
+import org.springframework.test.web.servlet.*
 import tech.developingdeveloper.tasksapi.datasource.TaskDataSource
 import tech.developingdeveloper.tasksapi.model.Task
 
@@ -342,6 +340,94 @@ internal class TaskControllerTest @Autowired constructor(
                         json(objectMapper.writeValueAsString(task), true)
                     }
                 }
+
+        }
+
+    }
+
+    @Nested
+    @DisplayName("PATCH /api/tasks/")
+    @TestInstance(TestInstance.Lifecycle.PER_CLASS)
+    inner class PatchTask {
+
+        @Test
+        fun `should update task`() {
+            // given
+            val task = Task("new task", "new details", "LOW", 1)
+            every { taskDataSource.retrieveTask(task.id) } returns task
+            every { taskDataSource.updateTask(task) } returns true
+
+            // when
+            val result = mockMvc.patch(baseUrl) {
+                contentType = jsonMediaType
+                content = objectMapper.writeValueAsString(task)
+            }
+
+            // then
+            result
+                .andDo { print() }
+                .andExpect {
+                    status { isOk() }
+                    content {
+                        contentType(jsonMediaType)
+                        json(objectMapper.writeValueAsString(task), true)
+                    }
+                }
+
+        }
+
+        @Test
+        fun `should throw TaskException as task with given id is not found`() {
+
+            // given
+            val task = Task("some title", "some details", "HIGH", 1)
+            every { taskDataSource.retrieveTask(task.id) } returns null
+
+            // when
+            val result = mockMvc.patch(baseUrl) {
+                contentType = jsonMediaType
+                content = objectMapper.writeValueAsString(task)
+            }
+
+            // then
+            result
+                .andDo { print() }
+                .andExpect {
+                    status { isBadRequest() }
+                    content {
+                        string("Task doesn't exit with id: ${task.id}")
+                    }
+                }
+        }
+
+    }
+
+    @Nested
+    @DisplayName("Dlete /api/tasks/{taskId}")
+    @TestInstance(TestInstance.Lifecycle.PER_CLASS)
+    inner class DeleteTask {
+
+        @Test
+        fun `should delete task with given id`() {
+            // given
+            val task = Task("some title", "some details", "HIGH", 1)
+            every { taskDataSource.retrieveTask(task.id) } returns task
+            every { taskDataSource.deleteTask(task.id) } returns true
+
+            // when
+            val result = mockMvc.delete("$baseUrl/${task.id}")
+
+            // then
+            result
+                .andDo { print() }
+                .andExpect {
+                    status { isOk() }
+                    content {
+                        contentType(jsonMediaType)
+                        json(objectMapper.writeValueAsString(task), true)
+                    }
+                }
+
 
         }
 

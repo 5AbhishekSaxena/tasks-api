@@ -30,4 +30,21 @@ class TaskServiceImpl @Autowired constructor(private val dataSource: TaskDataSou
         else
             throw TaskException("Failed to add new task")
 
+
+    override fun updateTask(task: Task): Task {
+        dataSource.retrieveTask(task.id) ?: throw TaskException("Task doesn't exit with id: ${task.id}")
+
+        dataSource.updateTask(task)
+
+        return task
+    }
+
+    override fun deleteTask(taskId: Int): Task {
+        val task = dataSource.retrieveTask(taskId) ?: throw TaskException("Task doesn't exit with id: $taskId")
+
+        dataSource.deleteTask(taskId)
+
+        return task
+    }
+
 }
