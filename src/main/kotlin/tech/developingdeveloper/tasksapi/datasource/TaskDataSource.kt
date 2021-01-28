@@ -1,6 +1,7 @@
 package tech.developingdeveloper.tasksapi.datasource
 
 import tech.developingdeveloper.tasksapi.model.Task
+import java.util.*
 
 
 /**
@@ -10,4 +11,5 @@ import tech.developingdeveloper.tasksapi.model.Task
 interface TaskDataSource {
 
     fun retrieveTasks(): Collection<Task>
+    fun retrieveTask(taskId: Int): Task?
 }

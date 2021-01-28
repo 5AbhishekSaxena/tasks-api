@@ -10,4 +10,5 @@ import tech.developingdeveloper.tasksapi.model.Task
 interface TaskService {
 
     fun retrieveTasks(): Collection<Task>
+    fun retrieveTask(taskId: Int): Task
 }

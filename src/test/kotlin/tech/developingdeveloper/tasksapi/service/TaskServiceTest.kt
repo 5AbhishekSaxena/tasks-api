@@ -2,50 +2,94 @@ package tech.developingdeveloper.tasksapi.service
 
 import io.mockk.every
 import io.mockk.mockk
+import org.junit.jupiter.api.*
 import org.junit.jupiter.api.Assertions.assertEquals
-import org.junit.jupiter.api.Test
-import org.junit.jupiter.api.assertThrows
 import tech.developingdeveloper.tasksapi.datasource.TaskDataSource
 import tech.developingdeveloper.tasksapi.exception.TaskException
 import tech.developingdeveloper.tasksapi.model.Task
 
 internal class TaskServiceTest {
 
-    private val mockTaskDataSource = mockk<TaskDataSource>()
+    private val taskDataSource = mockk<TaskDataSource>()
 
 
-    private val taskService = TaskServiceImpl(mockTaskDataSource)
+    private val taskService = TaskServiceImpl(taskDataSource)
 
-    @Test
-    fun `should retrieve tasks if list is not empty`() {
 
-        // given
-        val tasks = listOf(
-            Task(1, "some title", "some details", "HIGH")
-        )
+    @Nested
+    @DisplayName("Retrieve all tasks")
+    @TestInstance(TestInstance.Lifecycle.PER_CLASS)
+    inner class RetrieveTasks {
 
-        every { mockTaskDataSource.retrieveTasks() } returns tasks
 
-        // when
-        val result = taskService.retrieveTasks()
+        @Test
+        fun `should retrieve tasks if list is not empty`() {
 
-        // then
-        assertEquals(tasks, result)
+            // given
+            val tasks = listOf(
+                Task("some title", "some details", "HIGH", 1)
+            )
 
+            every { taskDataSource.retrieveTasks() } returns tasks
+
+            // when
+            val result = taskService.retrieveTasks()
+
+            // then
+            assertEquals(tasks, result)
+
+        }
+
+        @Test
+        fun `should throw exception if the list of tasks is empty`() {
+
+            // given
+            every { taskDataSource.retrieveTasks() } returns emptyList()
+
+            // when
+            val exception = assertThrows<TaskException> { taskService.retrieveTasks() }
+
+            // then
+            assertEquals("List is empty", exception.message)
+
+        }
     }
 
-    @Test
-    fun `should throw exception if the list of tasks is empty`() {
+    @Nested
+    @DisplayName("Retrieve task using task id")
+    @TestInstance(TestInstance.Lifecycle.PER_CLASS)
+    inner class RetrieveTaskUsingId {
 
-        // given
-        every { mockTaskDataSource.retrieveTasks() } returns emptyList()
+        @Test
+        fun `should return task using task Id`() {
+            // given
+            val taskId = 1
+            val task = Task("soem title", "some details", "HIGH", 1)
+            every { taskDataSource.retrieveTask(taskId) } returns task
 
-        // when
-        val exception = assertThrows<TaskException> { taskService.retrieveTasks() }
+            // when
+            val result = taskService.retrieveTask(taskId)
 
-        // then
-        assertEquals("List is empty", exception.message)
+            // then
+            assertEquals(task, result)
 
+        }
+
+        @Test
+        fun `should throw TaskException if task with given id doesn't exist`() {
+            // given
+            val taskId = 1
+            every { taskDataSource.retrieveTask(taskId) } throws NoSuchElementException()
+
+            // when
+            val exception = assertThrows<NoSuchElementException> { taskService.retrieveTask(taskId) }
+
+            // then
+            assertEquals(null, exception.message)
+
+        }
     }
+
+
 
 }

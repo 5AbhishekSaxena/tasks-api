@@ -3,7 +3,6 @@ package tech.developingdeveloper.tasksapi.controller
 import com.fasterxml.jackson.databind.ObjectMapper
 import com.ninjasquad.springmockk.MockkBean
 import io.mockk.every
-import io.mockk.verify
 import org.junit.jupiter.api.DisplayName
 import org.junit.jupiter.api.Nested
 import org.junit.jupiter.api.Test
@@ -16,7 +15,6 @@ import org.springframework.test.web.servlet.MockMvc
 import org.springframework.test.web.servlet.get
 import tech.developingdeveloper.tasksapi.datasource.TaskDataSource
 import tech.developingdeveloper.tasksapi.model.Task
-import tech.developingdeveloper.tasksapi.service.TaskService
 
 /*
 check why this combination does work
@@ -37,7 +35,7 @@ internal class TaskControllerTest @Autowired constructor(
 
             // given
             val tasks = listOf(
-                Task(1, "some title", "some details", "HIGH"),
+                Task("some title", "some details", "HIGH"), 1,
                 Task(2, "some title", "some details", "HIGH"),
                 Task(3, "some title", "some details", "HIGH")
             )
@@ -207,6 +205,8 @@ internal class TaskControllerTest @Autowired constructor(
     @MockkBean
     private lateinit var taskDataSource: TaskDataSource
 
+    private val jsonMediaType = MediaType.APPLICATION_JSON
+
     @Nested
     @DisplayName("GET api/tasks/")
     @TestInstance(TestInstance.Lifecycle.PER_CLASS)
@@ -217,7 +217,7 @@ internal class TaskControllerTest @Autowired constructor(
 
             // given
             val tasks = listOf(
-                Task(1, "some title", "some details", "HIGH")
+                Task("some title", "some details", "HIGH", 1)
             )
             every { taskDataSource.retrieveTasks() } returns tasks
 
@@ -232,7 +232,7 @@ internal class TaskControllerTest @Autowired constructor(
                         isOk()
                     }
                     content {
-                        contentType(MediaType.APPLICATION_JSON)
+                        contentType(jsonMediaType)
                         json(objectMapper.writeValueAsString(tasks), true)
                     }
                 }
@@ -254,7 +254,64 @@ internal class TaskControllerTest @Autowired constructor(
                     status {
                         isBadRequest()
                     }
+                    content {
+                        string("List is empty")
+                    }
                 }
         }
     }
+
+    @Nested
+    @DisplayName("GET /api/tasks/{taskId}")
+    @TestInstance(TestInstance.Lifecycle.PER_CLASS)
+    inner class GetTask {
+
+        @Test
+        fun `should retrieve task with the given task Id`(){
+            // given
+            val task = Task("some title", "some details", "HIGH", 1)
+            every { taskDataSource.retrieveTask(task.id) } returns task
+
+            // when
+            val mvcResult = mockMvc.get("$baseUrl/${task.id}")
+
+            // then
+            mvcResult
+                .andDo { print() }
+                .andExpect {
+                    status {
+                        isOk()
+                    }
+                    content {
+                        contentType(jsonMediaType)
+                        json(objectMapper.writeValueAsString(task), true)
+                    }
+                }
+        }
+
+        @Test
+        fun `should return BAD REQUEST when task is not found`() {
+
+            // given
+            val taskId = 1
+            every { taskDataSource.retrieveTask(taskId) } returns null
+
+            // when
+            val mvcResult = mockMvc.get("$baseUrl/$taskId")
+
+            // then
+            mvcResult
+                .andDo { print() }
+                .andExpect {
+                    status {
+                        isBadRequest()
+                    }
+                    content {
+                        string("Task doesn't exist with id: $taskId")
+                    }
+                }
+        }
+
+    }
+
 }

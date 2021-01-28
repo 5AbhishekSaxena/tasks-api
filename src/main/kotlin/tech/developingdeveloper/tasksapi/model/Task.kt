@@ -6,8 +6,8 @@ package tech.developingdeveloper.tasksapi.model
  */
 
 data class Task(
-    val id: Int,
     val title: String,
     val details: String,
-    val priority: String
+    val priority: String,
+    val id: Int = 0
 )

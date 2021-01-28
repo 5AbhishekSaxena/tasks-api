@@ -20,4 +20,8 @@ class TaskServiceImpl @Autowired constructor(private val dataSource: TaskDataSou
 
         return tasks
     }
+
+    override fun retrieveTask(taskId: Int): Task =
+        dataSource.retrieveTask(taskId) ?: throw TaskException("Task doesn't exist with id: $taskId")
+
 }

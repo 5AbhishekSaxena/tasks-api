@@ -7,9 +7,14 @@ import tech.developingdeveloper.tasksapi.model.Task
 @Repository
 class MockTaskDataSource : TaskDataSource {
 
-    private val tasks = listOf(
-        Task(1, "some title", "some details", "HIGH")
+    private val tasks = mutableListOf(
+        Task("some title", "some details", "HIGH", 1)
     )
 
     override fun retrieveTasks(): Collection<Task> = tasks
+
+    override fun retrieveTask(taskId: Int): Task? = tasks.firstOrNull {
+        it.id == taskId
+    }
+
 }
