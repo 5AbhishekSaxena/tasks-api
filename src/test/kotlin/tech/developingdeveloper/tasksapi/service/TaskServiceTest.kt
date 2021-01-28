@@ -90,6 +90,39 @@ internal class TaskServiceTest {
         }
     }
 
+    @Nested
+    @DisplayName("Add new task")
+    @TestInstance(TestInstance.Lifecycle.PER_CLASS)
+    inner class AddTask {
+
+        @Test
+        fun `should successfully add new task`() {
+            // given
+            val task = Task("some title", "some details", "HIGH")
+            every { taskDataSource.addTask(task) } returns true
+
+            // when
+            val result = taskService.addTask(task)
+
+            // then
+            assertEquals(task, result)
+
+        }
+
+        @Test
+        fun `should fail to add new task`() {
+            // given
+            val task = Task("some title", "some details", "HIGH")
+            every { taskDataSource.addTask(task) } returns false
+
+            // when
+            val exception = assertThrows<TaskException> { taskService.addTask(task) }
+
+            // then
+            assertEquals("Failed to add new task", exception.message)
+
+        }
+    }
 
 
 }

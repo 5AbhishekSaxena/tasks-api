@@ -17,4 +17,5 @@ class MockTaskDataSource : TaskDataSource {
         it.id == taskId
     }
 
+    override fun addTask(task: Task): Boolean = tasks.add(task)
 }

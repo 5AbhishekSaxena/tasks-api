@@ -11,4 +11,5 @@ interface TaskService {
 
     fun retrieveTasks(): Collection<Task>
     fun retrieveTask(taskId: Int): Task
+    fun addTask(task: Task): Task
 }

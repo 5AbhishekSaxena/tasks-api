@@ -24,4 +24,8 @@ class TaskController @Autowired constructor(
     @GetMapping("/{taskId}")
     fun getTask(@PathVariable taskId: Int): Task = taskService.retrieveTask(taskId)
 
+    @PostMapping("/")
+    @ResponseStatus(HttpStatus.CREATED)
+    fun addTask(@RequestBody task: Task): Task = taskService.addTask(task)
+
 }

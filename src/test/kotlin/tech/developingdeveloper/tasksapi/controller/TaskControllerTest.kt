@@ -13,6 +13,7 @@ import org.springframework.boot.test.context.SpringBootTest
 import org.springframework.http.MediaType
 import org.springframework.test.web.servlet.MockMvc
 import org.springframework.test.web.servlet.get
+import org.springframework.test.web.servlet.post
 import tech.developingdeveloper.tasksapi.datasource.TaskDataSource
 import tech.developingdeveloper.tasksapi.model.Task
 
@@ -267,7 +268,7 @@ internal class TaskControllerTest @Autowired constructor(
     inner class GetTask {
 
         @Test
-        fun `should retrieve task with the given task Id`(){
+        fun `should retrieve task with the given task Id`() {
             // given
             val task = Task("some title", "some details", "HIGH", 1)
             every { taskDataSource.retrieveTask(task.id) } returns task
@@ -310,6 +311,38 @@ internal class TaskControllerTest @Autowired constructor(
                         string("Task doesn't exist with id: $taskId")
                     }
                 }
+        }
+
+    }
+
+    @Nested
+    @DisplayName("POST /api/tasks/")
+    @TestInstance(TestInstance.Lifecycle.PER_CLASS)
+    inner class PostTask {
+
+        @Test
+        fun `should add new task`() {
+            // given
+            val task = Task("some title", "some details", "HIGH", 1)
+            every { taskDataSource.addTask(task) } returns true
+
+            // when
+            val result = mockMvc.post(baseUrl) {
+                contentType = jsonMediaType
+                content = objectMapper.writeValueAsString(task)
+            }
+
+            // then
+            result
+                .andDo { print() }
+                .andExpect {
+                    status { isCreated() }
+                    content {
+                        contentType(jsonMediaType)
+                        json(objectMapper.writeValueAsString(task), true)
+                    }
+                }
+
         }
 
     }

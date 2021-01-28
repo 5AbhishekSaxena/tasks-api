@@ -24,4 +24,10 @@ class TaskServiceImpl @Autowired constructor(private val dataSource: TaskDataSou
     override fun retrieveTask(taskId: Int): Task =
         dataSource.retrieveTask(taskId) ?: throw TaskException("Task doesn't exist with id: $taskId")
 
+    override fun addTask(task: Task): Task =
+        if (dataSource.addTask(task))
+            task
+        else
+            throw TaskException("Failed to add new task")
+
 }
