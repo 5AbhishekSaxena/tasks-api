@@ -1,11 +1,11 @@
 package tech.developingdeveloper.tasksapi.controller
 
-import org.springframework.beans.factory.annotation.Autowired
 import org.springframework.http.HttpStatus
 import org.springframework.web.bind.annotation.*
-import tech.developingdeveloper.tasksapi.model.Task
+import tech.developingdeveloper.tasksapi.dto.TaskDTO
 import tech.developingdeveloper.tasksapi.service.TaskService
-import tech.developingdeveloper.tasksapi.service.TaskServiceImpl
+import javax.validation.Valid
+import javax.validation.constraints.NotNull
 
 
 /**
@@ -14,23 +14,28 @@ import tech.developingdeveloper.tasksapi.service.TaskServiceImpl
 
 @RestController
 @RequestMapping("/api/tasks")
-class TaskController @Autowired constructor(
+class TaskController(
     private val taskService: TaskService
 ) {
 
     @GetMapping("/")
-    fun getTasks(): Collection<Task> = taskService.retrieveTasks()
+    fun getTasks(): Collection<TaskDTO> = taskService.retrieveTasks()
 
     @GetMapping("/{taskId}")
-    fun getTask(@PathVariable taskId: Int): Task = taskService.retrieveTask(taskId)
+    fun getTask(
+        @PathVariable taskId: Int
+    ): TaskDTO = taskService.retrieveTask(taskId)
 
     @PostMapping("/")
     @ResponseStatus(HttpStatus.CREATED)
-    fun addTask(@RequestBody task: Task): Task = taskService.addTask(task)
+    fun addTask(@RequestBody @Valid task: TaskDTO): TaskDTO = taskService.addTask(task)
 
     @PatchMapping("/")
-    fun updateTask(@RequestBody task: Task): Task = taskService.updateTask(task)
+    fun updateTask(
+        @RequestBody @Valid task: TaskDTO
+    ): TaskDTO = taskService.updateTask(task)
 
-    @DeleteMapping("/{taskId}")
-    fun deleteTask(@PathVariable taskId: Int): Task = taskService.deleteTask(taskId)
+    @DeleteMapping("/")
+    fun deleteTask(@RequestParam @NotNull taskId: Int): TaskDTO =
+        taskService.deleteTask(taskId)
 }
