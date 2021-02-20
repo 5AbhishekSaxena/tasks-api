@@ -1,7 +1,6 @@
 package tech.developingdeveloper.tasksapi.datasource
 
 import tech.developingdeveloper.tasksapi.model.Task
-import java.util.*
 
 
 /**
@@ -12,7 +11,7 @@ interface TaskDataSource {
 
     fun retrieveTasks(): Collection<Task>
     fun retrieveTask(taskId: Int): Task?
-    fun addTask(task: Task): Boolean
+    fun addTask(task: Task): Task
     fun updateTask(task: Task): Boolean
     fun deleteTask(taskId: Int): Boolean
 
