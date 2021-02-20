@@ -24,10 +24,13 @@ class TaskServiceImpl(
     }
 
     @Throws(TaskException::class)
-    override fun retrieveTask(taskId: Int): TaskDTO =
+    override fun retrieveTask(taskId: Int): TaskDTO = if (taskId < 1) {
+        throw TaskException("Id must be greater than or equal to 0")
+    } else {
         taskMapper.fromEntity(
             dataSource.retrieveTask(taskId) ?: throw TaskException("Task doesn't exist with id: $taskId")
         )
+    }
 
     @Throws(TaskException::class)
     override fun addTask(task: TaskDTO): TaskDTO {

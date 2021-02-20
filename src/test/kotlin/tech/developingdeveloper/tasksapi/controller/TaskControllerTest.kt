@@ -14,7 +14,9 @@ import org.springframework.http.MediaType
 import org.springframework.test.web.servlet.*
 import tech.developingdeveloper.tasksapi.datasource.TaskDataSource
 import tech.developingdeveloper.tasksapi.dto.Priority
+import tech.developingdeveloper.tasksapi.exception.TaskException
 import tech.developingdeveloper.tasksapi.model.Task
+import tech.developingdeveloper.tasksapi.utils.ApiError
 
 /*
 check why this combination does work
@@ -255,7 +257,8 @@ internal class TaskControllerTest @Autowired constructor(
                         isBadRequest()
                     }
                     content {
-                        string("List is empty")
+                        contentType(MediaType.APPLICATION_JSON)
+                        jsonPath("$.errorMessage") { value("List is empty") }
                     }
                 }
         }
@@ -300,6 +303,7 @@ internal class TaskControllerTest @Autowired constructor(
             val mvcResult = mockMvc.get("$baseUrl/$taskId")
 
             // then
+            val error = ApiError("Task doesn't exist with id: $taskId")
             mvcResult
                 .andDo { print() }
                 .andExpect {
@@ -307,7 +311,7 @@ internal class TaskControllerTest @Autowired constructor(
                         isBadRequest()
                     }
                     content {
-                        string("Task doesn't exist with id: $taskId")
+                        jsonPath("$.errorMessage") { value(error.errorMessage) }
                     }
                 }
         }
@@ -316,7 +320,7 @@ internal class TaskControllerTest @Autowired constructor(
         fun `should return BAD REQUEST when negative id is less than 1`() {
             // given
             val task = Task("some title", "some details", Priority.HIGH, -1)
-            every { taskDataSource.retrieveTask(task.id!!) } returns task
+            every { taskDataSource.retrieveTask(task.id!!) } throws TaskException("Task doesn't exist with id: ${task.id}")
 
             // when
             val result = mockMvc.get("$baseUrl/-1")
@@ -326,7 +330,7 @@ internal class TaskControllerTest @Autowired constructor(
                 .andExpect {
                     status { isBadRequest() }
                     content {
-                        jsonPath("$.errorMessage") { value("Id must be greater than or equal to 1") }
+                        jsonPath("$.errorMessage") { value("Id must be greater than or equal to 0") }
                     }
                 }
         }
@@ -340,7 +344,7 @@ internal class TaskControllerTest @Autowired constructor(
         @Test
         fun `should add new task`() {
             // given
-            val task = Task("some title", "some details", Priority.HIGH, 1)
+            val task = Task("some title", "some details", Priority.HIGH, null)
             every { taskDataSource.addTask(task) } returns task
 
             // when
@@ -368,7 +372,10 @@ internal class TaskControllerTest @Autowired constructor(
             val task = Task("Some title", "Some Details", Priority.HIGH, 1)
 
             // when
-            val result = mockMvc.post(baseUrl)
+            val result = mockMvc.post(baseUrl) {
+                contentType = jsonMediaType
+                content = objectMapper.writeValueAsString(task)
+            }
 
             // then
             result.andDo { print() }
@@ -431,7 +438,8 @@ internal class TaskControllerTest @Autowired constructor(
                 .andExpect {
                     status { isBadRequest() }
                     content {
-                        jsonPath("$.errorMessage") { value("Task doesn't exit with id: ${task.id}") }
+                        contentType(MediaType.APPLICATION_JSON)
+                        jsonPath("$.errorMessage") { value("Task doesn't exist with id: ${task.id}") }
                     }
                 }
         }
@@ -451,7 +459,7 @@ internal class TaskControllerTest @Autowired constructor(
             every { taskDataSource.deleteTask(task.id!!) } returns true
 
             // when
-            val result = mockMvc.delete("$baseUrl?id=${task.id}")
+            val result = mockMvc.delete("$baseUrl?taskId=${task.id}")
 
             // then
             result
