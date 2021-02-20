@@ -23,6 +23,8 @@ dependencies {
     implementation("junit:junit:4.12")
     testImplementation("org.springframework.boot:spring-boot-starter-test")
     testImplementation("com.ninja-squad:springmockk:1.1.3")
+
+    implementation("org.springframework.boot:spring-boot-starter-validation")
 }
 
 tasks.withType<KotlinCompile> {
