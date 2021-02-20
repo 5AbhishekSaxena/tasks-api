@@ -13,6 +13,7 @@ import org.springframework.boot.test.context.SpringBootTest
 import org.springframework.http.MediaType
 import org.springframework.test.web.servlet.*
 import tech.developingdeveloper.tasksapi.datasource.TaskDataSource
+import tech.developingdeveloper.tasksapi.dto.Priority
 import tech.developingdeveloper.tasksapi.model.Task
 
 /*
@@ -216,7 +217,7 @@ internal class TaskControllerTest @Autowired constructor(
 
             // given
             val tasks = listOf(
-                Task("some title", "some details", "HIGH", 1)
+                Task("some title", "some details", Priority.HIGH, 1)
             )
             every { taskDataSource.retrieveTasks() } returns tasks
 
@@ -268,8 +269,8 @@ internal class TaskControllerTest @Autowired constructor(
         @Test
         fun `should retrieve task with the given task Id`() {
             // given
-            val task = Task("some title", "some details", "HIGH", 1)
-            every { taskDataSource.retrieveTask(task.id) } returns task
+            val task = Task("some title", "some details", Priority.HIGH, 1)
+            every { taskDataSource.retrieveTask(task.id ?: 1) } returns task
 
             // when
             val mvcResult = mockMvc.get("$baseUrl/${task.id}")
@@ -311,6 +312,24 @@ internal class TaskControllerTest @Autowired constructor(
                 }
         }
 
+        @Test
+        fun `should return BAD REQUEST when negative id is less than 1`() {
+            // given
+            val task = Task("some title", "some details", Priority.HIGH, -1)
+            every { taskDataSource.retrieveTask(task.id!!) } returns task
+
+            // when
+            val result = mockMvc.get("$baseUrl/-1")
+
+            // then
+            result.andDo { print() }
+                .andExpect {
+                    status { isBadRequest() }
+                    content {
+                        jsonPath("$.errorMessage") { value("Id must be greater than or equal to 1") }
+                    }
+                }
+        }
     }
 
     @Nested
@@ -321,8 +340,8 @@ internal class TaskControllerTest @Autowired constructor(
         @Test
         fun `should add new task`() {
             // given
-            val task = Task("some title", "some details", "HIGH", 1)
-            every { taskDataSource.addTask(task) } returns true
+            val task = Task("some title", "some details", Priority.HIGH, 1)
+            every { taskDataSource.addTask(task) } returns task
 
             // when
             val result = mockMvc.post(baseUrl) {
@@ -343,6 +362,23 @@ internal class TaskControllerTest @Autowired constructor(
 
         }
 
+        @Test
+        fun `should return BAD REQUEST when task id is not null`() {
+            // given
+            val task = Task("Some title", "Some Details", Priority.HIGH, 1)
+
+            // when
+            val result = mockMvc.post(baseUrl)
+
+            // then
+            result.andDo { print() }
+                .andExpect {
+                    status { isBadRequest() }
+                    jsonPath("$.errorMessage") { value("Task Id must be null") }
+                }
+
+        }
+
     }
 
     @Nested
@@ -353,8 +389,8 @@ internal class TaskControllerTest @Autowired constructor(
         @Test
         fun `should update task`() {
             // given
-            val task = Task("new task", "new details", "LOW", 1)
-            every { taskDataSource.retrieveTask(task.id) } returns task
+            val task = Task("new task", "new details", Priority.HIGH, 1)
+            every { taskDataSource.retrieveTask(task.id!!) } returns task
             every { taskDataSource.updateTask(task) } returns true
 
             // when
@@ -380,11 +416,11 @@ internal class TaskControllerTest @Autowired constructor(
         fun `should throw TaskException as task with given id is not found`() {
 
             // given
-            val task = Task("some title", "some details", "HIGH", 1)
-            every { taskDataSource.retrieveTask(task.id) } returns null
+            val task = Task("some title", "some details", Priority.HIGH, 1)
+            every { taskDataSource.retrieveTask(task.id!!) } returns null
 
             // when
-            val result = mockMvc.patch(baseUrl) {
+            val result = mockMvc.patch("$baseUrl?id=${task.id}") {
                 contentType = jsonMediaType
                 content = objectMapper.writeValueAsString(task)
             }
@@ -395,7 +431,7 @@ internal class TaskControllerTest @Autowired constructor(
                 .andExpect {
                     status { isBadRequest() }
                     content {
-                        string("Task doesn't exit with id: ${task.id}")
+                        jsonPath("$.errorMessage") { value("Task doesn't exit with id: ${task.id}") }
                     }
                 }
         }
@@ -403,19 +439,19 @@ internal class TaskControllerTest @Autowired constructor(
     }
 
     @Nested
-    @DisplayName("Dlete /api/tasks/{taskId}")
+    @DisplayName("DELETE /api/tasks/?id={taskId}")
     @TestInstance(TestInstance.Lifecycle.PER_CLASS)
     inner class DeleteTask {
 
         @Test
         fun `should delete task with given id`() {
             // given
-            val task = Task("some title", "some details", "HIGH", 1)
-            every { taskDataSource.retrieveTask(task.id) } returns task
-            every { taskDataSource.deleteTask(task.id) } returns true
+            val task = Task("some title", "some details", Priority.HIGH, 1)
+            every { taskDataSource.retrieveTask(task.id!!) } returns task
+            every { taskDataSource.deleteTask(task.id!!) } returns true
 
             // when
-            val result = mockMvc.delete("$baseUrl/${task.id}")
+            val result = mockMvc.delete("$baseUrl?id=${task.id}")
 
             // then
             result
@@ -427,10 +463,7 @@ internal class TaskControllerTest @Autowired constructor(
                         json(objectMapper.writeValueAsString(task), true)
                     }
                 }
-
-
         }
 
     }
-
 }

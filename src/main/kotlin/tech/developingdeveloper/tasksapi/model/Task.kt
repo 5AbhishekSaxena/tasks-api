@@ -1,5 +1,7 @@
 package tech.developingdeveloper.tasksapi.model
 
+import tech.developingdeveloper.tasksapi.dto.Priority
+
 
 /**
  * Created by Abhishek Saxena on 24-01-2021.
@@ -8,6 +10,6 @@ package tech.developingdeveloper.tasksapi.model
 data class Task(
     val title: String,
     val details: String,
-    val priority: String,
-    val id: Int = 0
+    val priority: Priority,
+    var id: Int?
 )
