@@ -1,6 +1,6 @@
 package tech.developingdeveloper.tasksapi.service
 
-import tech.developingdeveloper.tasksapi.model.Task
+import tech.developingdeveloper.tasksapi.dto.TaskDTO
 
 
 /**
@@ -9,9 +9,9 @@ import tech.developingdeveloper.tasksapi.model.Task
 
 interface TaskService {
 
-    fun retrieveTasks(): Collection<Task>
-    fun retrieveTask(taskId: Int): Task
-    fun addTask(task: Task): Task
-    fun updateTask(task: Task): Task
-    fun deleteTask(taskId: Int): Task
+    fun retrieveTasks(): Collection<TaskDTO>
+    fun retrieveTask(taskId: Int): TaskDTO
+    fun addTask(task: TaskDTO): TaskDTO
+    fun updateTask(task: TaskDTO): TaskDTO
+    fun deleteTask(taskId: Int): TaskDTO
 }

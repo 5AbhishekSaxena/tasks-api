@@ -1,50 +1,65 @@
 package tech.developingdeveloper.tasksapi.service
 
-import org.springframework.beans.factory.annotation.Autowired
 import org.springframework.stereotype.Service
 import tech.developingdeveloper.tasksapi.datasource.TaskDataSource
+import tech.developingdeveloper.tasksapi.dto.TaskDTO
 import tech.developingdeveloper.tasksapi.exception.TaskException
-import tech.developingdeveloper.tasksapi.model.Task
-import kotlin.jvm.Throws
+import tech.developingdeveloper.tasksapi.utils.mapper.TaskMapper
 
 @Service("TaskService")
-class TaskServiceImpl @Autowired constructor(private val dataSource: TaskDataSource) : TaskService {
+class TaskServiceImpl(
+    private val dataSource: TaskDataSource,
+    private val taskMapper: TaskMapper
+) : TaskService {
 
     @Throws(TaskException::class)
-    override fun retrieveTasks(): Collection<Task> {
+    override fun retrieveTasks(): Collection<TaskDTO> {
 
         val tasks = dataSource.retrieveTasks()
 
         if (tasks.isNullOrEmpty())
             throw TaskException("List is empty")
 
-        return tasks
+        return taskMapper.fromEntityList(tasks)
     }
 
-    override fun retrieveTask(taskId: Int): Task =
-        dataSource.retrieveTask(taskId) ?: throw TaskException("Task doesn't exist with id: $taskId")
+    @Throws(TaskException::class)
+    override fun retrieveTask(taskId: Int): TaskDTO =
+        taskMapper.fromEntity(
+            dataSource.retrieveTask(taskId) ?: throw TaskException("Task doesn't exist with id: $taskId")
+        )
 
-    override fun addTask(task: Task): Task =
-        if (dataSource.addTask(task))
-            task
-        else
-            throw TaskException("Failed to add new task")
+    @Throws(TaskException::class)
+    override fun addTask(task: TaskDTO): TaskDTO {
+
+        if (task.id != null)
+            throw TaskException("Task Id must be null")
+
+        val newTask = dataSource.addTask(taskMapper.toEntity(task))
+
+        return taskMapper.fromEntity(newTask)
+    }
 
 
-    override fun updateTask(task: Task): Task {
-        dataSource.retrieveTask(task.id) ?: throw TaskException("Task doesn't exit with id: ${task.id}")
+    @Throws(TaskException::class)
+    override fun updateTask(task: TaskDTO): TaskDTO {
 
-        dataSource.updateTask(task)
+        task.id?.let {
+            retrieveTask(task.id)
+        } ?: throw TaskException("Task Id must not be null")
+
+        dataSource.updateTask(taskMapper.toEntity(task))
 
         return task
     }
 
-    override fun deleteTask(taskId: Int): Task {
+    @Throws(TaskException::class)
+    override fun deleteTask(taskId: Int): TaskDTO {
         val task = dataSource.retrieveTask(taskId) ?: throw TaskException("Task doesn't exit with id: $taskId")
 
         dataSource.deleteTask(taskId)
 
-        return task
+        return taskMapper.fromEntity(task)
     }
 
 }

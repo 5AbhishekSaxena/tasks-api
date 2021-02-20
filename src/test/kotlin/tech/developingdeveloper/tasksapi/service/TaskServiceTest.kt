@@ -2,18 +2,21 @@ package tech.developingdeveloper.tasksapi.service
 
 import io.mockk.every
 import io.mockk.mockk
-import io.mockk.verify
 import org.junit.jupiter.api.*
 import org.junit.jupiter.api.Assertions.assertEquals
 import tech.developingdeveloper.tasksapi.datasource.TaskDataSource
+import tech.developingdeveloper.tasksapi.dto.Priority
 import tech.developingdeveloper.tasksapi.exception.TaskException
 import tech.developingdeveloper.tasksapi.model.Task
+import tech.developingdeveloper.tasksapi.utils.mapper.TaskMapper
 
 internal class TaskServiceTest {
 
     private val taskDataSource = mockk<TaskDataSource>(relaxed = true)
 
-    private val taskService = TaskServiceImpl(taskDataSource)
+    private val taskMapper = TaskMapper()
+
+    private val taskService = TaskServiceImpl(taskDataSource, taskMapper)
 
     @Nested
     @DisplayName("Retrieve all tasks")
@@ -25,7 +28,7 @@ internal class TaskServiceTest {
 
             // given
             val tasks = listOf(
-                Task("some title", "some details", "HIGH", 1)
+                Task("some title", "some details", Priority.HIGH, 1)
             )
 
             every { taskDataSource.retrieveTasks() } returns tasks
@@ -62,7 +65,7 @@ internal class TaskServiceTest {
         fun `should return task using task Id`() {
             // given
             val taskId = 1
-            val task = Task("some title", "some details", "HIGH", 1)
+            val task = Task("some title", "some details", Priority.HIGH, 1)
             every { taskDataSource.retrieveTask(taskId) } returns task
 
             // when
@@ -96,11 +99,11 @@ internal class TaskServiceTest {
         @Test
         fun `should successfully add new task`() {
             // given
-            val task = Task("some title", "some details", "HIGH")
-            every { taskDataSource.addTask(task) } returns true
+            val task = Task("some title", "some details", Priority.HIGH, 1)
+            every { taskDataSource.addTask(task) } returns task
 
             // when
-            val result = assertDoesNotThrow { taskService.addTask(task) }
+            val result = assertDoesNotThrow { taskService.addTask(taskMapper.fromEntity(task)) }
 
             // then
             assertEquals(task, result)
@@ -110,11 +113,11 @@ internal class TaskServiceTest {
         @Test
         fun `should fail to add new task`() {
             // given
-            val task = Task("some title", "some details", "HIGH")
-            every { taskDataSource.addTask(task) } returns false
+            val task = Task("some title", "some details", Priority.HIGH, 1)
+            every { taskDataSource.addTask(task) } returns task
 
             // when
-            val exception = assertThrows<TaskException> { taskService.addTask(task) }
+            val exception = assertThrows<TaskException> { taskService.addTask(taskMapper.fromEntity(task)) }
 
             // then
             assertEquals("Failed to add new task", exception.message)
@@ -131,8 +134,8 @@ internal class TaskServiceTest {
         fun `should update task`() {
             // given
             var count = 0
-            val oldTask = Task("some task", "some details", "HIGH", 1)
-            val updatedTask = Task("new task", "new details", "LOW", 1)
+            val oldTask = Task("some task", "some details", Priority.HIGH, 1)
+            val updatedTask = Task("new task", "new details", Priority.LOW, 1)
 
             every { taskDataSource.retrieveTask(1) } answers {
                 count++
@@ -147,22 +150,22 @@ internal class TaskServiceTest {
             every { taskDataSource.updateTask(updatedTask) } returns true
 
             // when
-            val result = assertDoesNotThrow { taskService.updateTask(updatedTask) }
+            val result = assertDoesNotThrow { taskService.updateTask(taskMapper.fromEntity(updatedTask)) }
 
             // then
             assertEquals(updatedTask, result)
-            assertEquals(updatedTask, taskDataSource.retrieveTask(updatedTask.id))
+            assertEquals(updatedTask, taskDataSource.retrieveTask(updatedTask.id!!))
 
         }
 
         @Test
         fun `should throw exception when update task`() {
             // given
-            val updatedTask = Task("new task", "new details", "LOW", 1)
+            val updatedTask = Task("new task", "new details", Priority.LOW, 1)
             every { taskDataSource.retrieveTask(1) } returns null
 
             // when
-            val result = assertThrows<TaskException> { taskService.updateTask(updatedTask) }
+            val result = assertThrows<TaskException> { taskService.updateTask(taskMapper.fromEntity(updatedTask)) }
 
             // then
             assertEquals("Task doesn't exit with id: ${updatedTask.id}", result.message)
@@ -179,12 +182,12 @@ internal class TaskServiceTest {
         @Test
         fun `should delete the task with the given id`() {
             // given
-            val task = Task("some title", "some details", "HIGH", 1)
-            every { taskDataSource.retrieveTask(task.id) } returns task
-            every { taskDataSource.deleteTask(task.id) } returns true
+            val task = Task("some title", "some details", Priority.HIGH, 1)
+            every { taskDataSource.retrieveTask(task.id!!) } returns task
+            every { taskDataSource.deleteTask(task.id!!) } returns true
 
             // when
-            val result = assertDoesNotThrow { taskService.deleteTask(task.id) }
+            val result = assertDoesNotThrow { taskService.deleteTask(task.id!!) }
 
             // then
             assertEquals(task, result)
